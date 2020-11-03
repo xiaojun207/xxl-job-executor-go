@@ -3,7 +3,6 @@ package xxl
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -72,7 +71,7 @@ func (e *executor) Run() (err error) {
 		Handler:      mux,
 	}
 	// 监听端口并提供服务
-	fmt.Println("Starting server at " + e.address)
+	log.Println("Starting server at " + e.address)
 	go server.ListenAndServe()
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGKILL, syscall.SIGQUIT, syscall.SIGINT, syscall.SIGTERM)
@@ -101,7 +100,7 @@ func (e *executor) runTask(writer http.ResponseWriter, request *http.Request) {
 		log.Println("参数解析错误:" + string(req))
 		return
 	}
-	fmt.Printf("任务参数:%v", param)
+	log.Printf("任务参数:%v", param)
 	if !e.regList.Exists(param.ExecutorHandler) {
 		writer.Write(returnCall(param, 500, "Task not registered"))
 		log.Println("任务[" + Int64ToStr(param.JobID) + "]没有注册:" + param.ExecutorHandler)
@@ -137,7 +136,7 @@ func (e *executor) runTask(writer http.ResponseWriter, request *http.Request) {
 	go task.Run(func(code int64, msg string) {
 		e.callback(task, code, msg)
 	})
-	fmt.Println("任务[" + Int64ToStr(param.JobID) + "]开始执行:" + param.ExecutorHandler)
+	log.Println("任务[" + Int64ToStr(param.JobID) + "]开始执行:" + param.ExecutorHandler)
 	writer.Write(returnGeneral())
 }
 
@@ -202,7 +201,7 @@ func (e *executor) registry() {
 				log.Println("执行器注册失败3:" + string(body))
 				return
 			}
-			fmt.Println("执行器注册成功:" + string(body))
+			log.Println("执行器注册成功:" + string(body))
 		}()
 
 	}
@@ -226,7 +225,7 @@ func (e *executor) registryRemove() {
 		log.Println("执行器摘除失败:" + err.Error())
 	}
 	body, err := ioutil.ReadAll(res.Body)
-	fmt.Println("执行器摘除成功:" + string(body))
+	log.Println("执行器摘除成功:" + string(body))
 	_ = res.Body.Close()
 }
 
@@ -234,11 +233,11 @@ func (e *executor) registryRemove() {
 func (e *executor) callback(task *Task, code int64, msg string) {
 	res, err := e.post("/api/callback", string(returnCall(task.Param, code, msg)))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	e.runList.Del(Int64ToStr(task.Id))
-	fmt.Println("任务回调成功:" + string(body))
+	log.Println("任务回调成功:" + string(body))
 }
 
 //post
