@@ -38,6 +38,7 @@ func newExecutor(opts ...Option) *executor {
 type executor struct {
 	opts    Options
 	address string
+	hasReg  bool
 	regList *taskList //注册任务列表
 	runList *taskList //正在执行任务列表
 	mu      sync.RWMutex
@@ -201,7 +202,10 @@ func (e *executor) registry() {
 				log.Println("执行器注册失败3:" + string(body))
 				return
 			}
-			log.Println("执行器注册成功:" + string(body))
+			if !e.hasReg {
+				log.Println("执行器注册成功:" + string(body))
+			}
+			e.hasReg = true
 		}()
 
 	}
@@ -226,6 +230,7 @@ func (e *executor) registryRemove() {
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	log.Println("执行器摘除成功:" + string(body))
+	e.hasReg = false
 	_ = res.Body.Close()
 }
 
